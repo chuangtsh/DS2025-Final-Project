@@ -1,0 +1,10 @@
+# Build outputs
+*.exe
+*.o
+
+# Editor files
+*.swp
+*.swo
+
+# OS files
+.DS_Store
