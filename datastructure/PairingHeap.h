@@ -76,6 +76,9 @@ public:
     
     // Clear the heap
     void clear();
+
+    // Delete arbitrary node
+    void deleteNode(PairingNode<T>* node);
 };
 
 // Include template implementation

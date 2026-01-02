@@ -34,41 +34,69 @@ PairingNode<T>* PairingHeap<T>::merge(PairingNode<T>* h1, PairingNode<T>* h2) {
     return h1;
 }
 
+// template<typename T>
+// PairingNode<T>* PairingHeap<T>::mergePairs(PairingNode<T>* firstSibling) {
+//     if (firstSibling == nullptr || firstSibling->nextSibling == nullptr) {
+//         return firstSibling;
+//     }
+    
+//     // Store siblings in a vector for two-pass merge
+//     std::vector<PairingNode<T>*> siblings;
+//     while (firstSibling != nullptr) {
+//         siblings.push_back(firstSibling);
+//         firstSibling->parent = nullptr;  // Clear parent during merge
+//         PairingNode<T>* next = firstSibling->nextSibling;
+//         firstSibling->nextSibling = nullptr;  // Disconnect
+//         firstSibling->prevSibling = nullptr;  // Clear prev
+//         firstSibling = next;
+//     }
+    
+
+//     // First pass: merge pairs from left to right
+//     size_t i = 0;
+//     while (i + 1 < siblings.size()) {
+//         siblings[i] = merge(siblings[i], siblings[i + 1]);
+//         i += 2;
+//     }
+    
+//     // Start from the last merged pair (or last single node)
+//     size_t start = (siblings.size() % 2 == 0) ? siblings.size() - 2 : siblings.size() - 1;
+    
+//     // Second pass: merge from right to left
+//     for (int j = start - 2; j >= 0; j -= 2) {
+//         siblings[start] = merge(siblings[j], siblings[start]);
+//     }
+    
+//     return siblings[start];
+    
+// }
+
 template<typename T>
 PairingNode<T>* PairingHeap<T>::mergePairs(PairingNode<T>* firstSibling) {
-    if (firstSibling == nullptr || firstSibling->nextSibling == nullptr) {
+    if (firstSibling == nullptr) {
+        return nullptr;
+    }
+    
+    if (firstSibling->nextSibling == nullptr) {
         return firstSibling;
     }
     
-    // Store siblings in a vector for two-pass merge
-    std::vector<PairingNode<T>*> siblings;
-    while (firstSibling != nullptr) {
-        siblings.push_back(firstSibling);
-        firstSibling->parent = nullptr;  // Clear parent during merge
-        PairingNode<T>* next = firstSibling->nextSibling;
-        firstSibling->nextSibling = nullptr;  // Disconnect
-        firstSibling->prevSibling = nullptr;  // Clear prev
-        firstSibling = next;
-    }
+    PairingNode<T>* secondSibling = firstSibling->nextSibling;
     
+    PairingNode<T>* rest = secondSibling->nextSibling;
+    
+    firstSibling->nextSibling = nullptr; 
+    firstSibling->prevSibling = nullptr;
+    secondSibling->nextSibling = nullptr;
+    secondSibling->prevSibling = nullptr;
+    
+    firstSibling->parent = nullptr;
+    secondSibling->parent = nullptr;
 
-    // First pass: merge pairs from left to right
-    size_t i = 0;
-    while (i + 1 < siblings.size()) {
-        siblings[i] = merge(siblings[i], siblings[i + 1]);
-        i += 2;
-    }
-    
-    // Start from the last merged pair (or last single node)
-    size_t start = (siblings.size() % 2 == 0) ? siblings.size() - 2 : siblings.size() - 1;
-    
-    // Second pass: merge from right to left
-    for (int j = start - 2; j >= 0; j -= 2) {
-        siblings[start] = merge(siblings[j], siblings[start]);
-    }
-    
-    return siblings[start];
-    
+    PairingNode<T>* mergedPair = merge(firstSibling, secondSibling);// 左至右產生兩兩一組的小heap
+    PairingNode<T>* mergedRest = mergePairs(rest); // 右至左遞迴合併小heaps
+
+    return merge(mergedPair, mergedRest);
 }
 
 template<typename T>
@@ -226,4 +254,21 @@ void PairingHeap<T>::clear() {
     deleteTree(root);
     root = nullptr;
     heapSize = 0;
+}
+
+template<typename T>
+void PairingHeap<T>::deleteNode(PairingNode<T>* node) {
+    if (node == nullptr) return;
+    if (node != root) {
+        cut(node);
+        PairingNode<T>* children = node->leftChild;
+        delete node;
+        heapSize--;
+        if (children != nullptr) {
+            PairingNode<T>* newSubTree = mergePairs(children);
+            root = merge(root, newSubTree);
+        }
+    }else{
+        deleteMin();
+    }
 }

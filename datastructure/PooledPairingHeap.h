@@ -38,34 +38,60 @@ private:
         return h1;
     }
     
+    // PairingNode<T>* mergePairs(PairingNode<T>* firstSibling) {
+    //     if (firstSibling == nullptr || firstSibling->nextSibling == nullptr) {
+    //         return firstSibling;
+    //     }
+        
+    //     std::vector<PairingNode<T>*> siblings;
+    //     while (firstSibling != nullptr) {
+    //         siblings.push_back(firstSibling);
+    //         firstSibling->parent = nullptr;
+    //         PairingNode<T>* next = firstSibling->nextSibling;
+    //         firstSibling->nextSibling = nullptr;
+    //         firstSibling->prevSibling = nullptr;
+    //         firstSibling = next;
+    //     }
+        
+    //     size_t i = 0;
+    //     while (i + 1 < siblings.size()) {
+    //         siblings[i] = merge(siblings[i], siblings[i + 1]);
+    //         i += 2;
+    //     }
+        
+    //     size_t start = (siblings.size() % 2 == 0) ? siblings.size() - 2 : siblings.size() - 1;
+        
+    //     for (int j = start - 2; j >= 0; j -= 2) {
+    //         siblings[start] = merge(siblings[j], siblings[start]);
+    //     }
+        
+    //     return siblings[start];
+    // }
+
     PairingNode<T>* mergePairs(PairingNode<T>* firstSibling) {
-        if (firstSibling == nullptr || firstSibling->nextSibling == nullptr) {
+        if (firstSibling == nullptr) {
+            return nullptr;
+        }
+        
+        if (firstSibling->nextSibling == nullptr) {
             return firstSibling;
         }
         
-        std::vector<PairingNode<T>*> siblings;
-        while (firstSibling != nullptr) {
-            siblings.push_back(firstSibling);
-            firstSibling->parent = nullptr;
-            PairingNode<T>* next = firstSibling->nextSibling;
-            firstSibling->nextSibling = nullptr;
-            firstSibling->prevSibling = nullptr;
-            firstSibling = next;
-        }
+        PairingNode<T>* secondSibling = firstSibling->nextSibling;
+        PairingNode<T>* rest = secondSibling->nextSibling;
         
-        size_t i = 0;
-        while (i + 1 < siblings.size()) {
-            siblings[i] = merge(siblings[i], siblings[i + 1]);
-            i += 2;
-        }
+        firstSibling->nextSibling = nullptr; 
+        firstSibling->prevSibling = nullptr;
+        secondSibling->nextSibling = nullptr;
+        secondSibling->prevSibling = nullptr;
         
-        size_t start = (siblings.size() % 2 == 0) ? siblings.size() - 2 : siblings.size() - 1;
-        
-        for (int j = start - 2; j >= 0; j -= 2) {
-            siblings[start] = merge(siblings[j], siblings[start]);
-        }
-        
-        return siblings[start];
+        firstSibling->parent = nullptr;
+        secondSibling->parent = nullptr;
+
+        PairingNode<T>* mergedPair = merge(firstSibling, secondSibling); // 左至右產生兩兩一組的小heap
+        PairingNode<T>* mergedRest = mergePairs(rest); // 右至左遞迴合併小heaps
+
+        return merge(mergedPair, mergedRest);
     }
     
     void deleteTree(PairingNode<T>* node) {
