@@ -1,5 +1,6 @@
 #include <iostream>
 #include "baseline.h"
+#include "BinaryHeap.h"
 #include "FourAryHeap.h"
 #include "FibonacciHeap.h"
 int main() {
@@ -25,6 +26,32 @@ int main() {
     while (!pq.isEmpty()) {
         std::cout << pq.extractMin() << " ";
     }
+    std::cout << std::endl << std::endl;
+
+    // Test 1.5: Custom Binary Heap (New!)
+    std::cout << "========================================" << std::endl;
+    std::cout << "Test 1.5: Custom Binary Heap" << std::endl;
+    std::cout << "========================================" << std::endl;
+    BinaryHeap<int> binHeap;
+    
+    std::cout << "Inserting: 5, 3, 8, 1, 9, 2, 7" << std::endl;
+    binHeap.insert(5);
+    binHeap.insert(3);
+    binHeap.insert(8);
+    binHeap.insert(1);
+    binHeap.insert(9);
+    binHeap.insert(2);
+    binHeap.insert(7);
+    
+    std::cout << "Queue size: " << binHeap.size() << std::endl;
+    std::cout << "Minimum element: " << binHeap.findMin() << std::endl;
+    
+    std::cout << "Extracting elements in sorted order: ";
+    while (!binHeap.isEmpty()) {
+        std::cout << binHeap.extractMin() << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "NOTE: This is the custom implementation to compare against 4-ary heap." << std::endl;
     std::cout << std::endl << std::endl;
     
     // Test 2: 4-ary Heap

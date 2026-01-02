@@ -9,6 +9,7 @@
 
 #include "../datastructure/PairingHeap.h"
 #include "../datastructure/PooledPairingHeap.h"
+#include "../baseline/BinaryHeap.h"          // <--- 新增這行
 #include "../baseline/FourAryHeap.h"
 #include "../baseline/FibonacciHeap.h"
 #include "../baseline/PooledFibonacciHeap.h"
@@ -91,7 +92,7 @@ Graph generateRandomGraph(int vertices, int avgDegree, int maxWeight) {
     return graph;
 }
 
-// --- Lazy Variants (STL, 4-ary, Fib-lazy, Pair-lazy) ---
+// --- Lazy Variants (STL, Binary, 4-ary, Fib-lazy, Pair-lazy) ---
 
 std::vector<int> dijkstraSTL(const Graph& graph, int source, OpStats* stats = nullptr) {
     int n = graph.size();
@@ -114,7 +115,35 @@ std::vector<int> dijkstraSTL(const Graph& graph, int source, OpStats* stats = nu
             if (newDist < dist[v]) {
                 dist[v] = newDist;
                 pq.push({newDist, v});
-                if(stats) stats->inserts++; // Lazy insert
+                if(stats) stats->inserts++; 
+            }
+        }
+    }
+    return dist;
+}
+
+// 新增: Binary Heap Dijkstra
+std::vector<int> dijkstraBinaryHeap(const Graph& graph, int source, OpStats* stats = nullptr) {
+    int n = graph.size();
+    std::vector<int> dist(n, std::numeric_limits<int>::max());
+    BinaryHeap<std::pair<int, int>> pq; // 使用自製 BinaryHeap
+    
+    dist[source] = 0;
+    pq.insert({0, source});
+    if(stats) stats->inserts++;
+    
+    while (!pq.isEmpty()) {
+        auto [d, u] = pq.extractMin();
+        if(stats) stats->extractMins++;
+        
+        if (d > dist[u]) continue;
+        for (const Edge& edge : graph[u]) {
+            int v = edge.to;
+            int newDist = dist[u] + edge.weight;
+            if (newDist < dist[v]) {
+                dist[v] = newDist;
+                pq.insert({newDist, v});
+                if(stats) stats->inserts++;
             }
         }
     }
@@ -203,6 +232,8 @@ std::vector<int> dijkstraPairingHeapLazy(const Graph& graph, int source, OpStats
 }
 
 // --- Decrease-Key Variants (Fib-dec, Pair-dec) ---
+// Note: Binary Heap and 4-ary Heap do not support efficient decrease-key
+// so they are not included in this specific section.
 
 std::vector<int> dijkstraFibonacciHeap(const Graph& graph, int source, OpStats* stats = nullptr) {
     int n = graph.size();
@@ -278,9 +309,10 @@ std::vector<int> dijkstraPairingHeap(const Graph& graph, int source, OpStats* st
 
 void benchmarkInsertHeavy() {
     std::cout << "\n=== Benchmark 1: Insert-Heavy Workload (Pure Insert) ===" << std::endl;
-    printf("%-12s | %-12s | %-12s | %-12s | %-12s | %-12s | %-12s\n", 
-           "Data Size", "STL (ms)", "4-ary (ms)", "Fib (ms)", "Pairing (ms)", "Fib (Pool)", "Pair (Pool)");
-    printf("----------------------------------------------------------------------------\n");
+    // Updated header to include Binary
+    printf("%-10s | %-9s | %-9s | %-9s | %-9s | %-9s | %-9s | %-9s\n", 
+           "Size", "STL", "Binary", "4-ary", "Fib", "Pair", "Fib(P)", "Pair(P)");
+    printf("--------------------------------------------------------------------------------------\n");
     
     std::vector<int> sizes = {1000, 10000, 100000, 500000, 1000000};
     
@@ -294,6 +326,14 @@ void benchmarkInsertHeavy() {
             std::priority_queue<int, std::vector<int>, std::greater<>> pq;
             Timer t;
             for(int x : data) pq.push(x);
+            return t.elapsed();
+        });
+
+        // Binary Heap Test
+        double t_bin = runIsolated([&]() {
+            BinaryHeap<int> pq;
+            Timer t;
+            for(int x : data) pq.insert(x);
             return t.elapsed();
         });
         
@@ -332,22 +372,23 @@ void benchmarkInsertHeavy() {
             return t.elapsed();
         });
         
-        printf("%-12d | %-12s | %-12s | %-12s | %-12s | %-12s | %-12s\n",
-           N, fmt(t_stl).c_str(), fmt(t_4ary).c_str(), fmt(t_fib).c_str(), fmt(t_pair).c_str(), 
+        printf("%-10d | %-9s | %-9s | %-9s | %-9s | %-9s | %-9s | %-9s\n",
+           N, fmt(t_stl).c_str(), fmt(t_bin).c_str(), fmt(t_4ary).c_str(), 
+           fmt(t_fib).c_str(), fmt(t_pair).c_str(), 
            fmt(t_pooled_fib).c_str(), fmt(t_pooled_pair).c_str());
     }
 }
 
 void benchmarkDecreaseKeyHeavy() {
-    std::cout << "\n=== Benchmark 2: Decrease-Key-Heavy Workload (Pure Decrease-Key) ===" << std::endl;
-    std::cout << "Highlighting Theoretical Capabilities (Allocators may impact Perf)" << std::endl;
-    std::cout << "(Data Size = Initial Elements, Operations = Data Size)" << std::endl;
-    printf("%-12s | %-12s | %-12s | %-12s | %-12s | %-12s | %-12s\n", 
-           "Data Size", "STL (Lazy)", "4-ary (Lazy)", "Fib (Dec)", "Pair (Dec)", "Fib (Pool)", "Pair (Pool)");
-    printf("----------------------------------------------------------------------------\n");
+    std::cout << "\n=== Benchmark 2: Decrease-Key-Heavy Workload ===" << std::endl;
+    std::cout << "Note: STL, Binary, and 4-ary use 'Lazy Insertion' (add duplicate) instead of DecreaseKey." << std::endl;
     
-    // Extended scales
-    std::vector<int> sizes = {1000, 10000, 50000, 100000, 200000, 500000};
+    // Updated header
+    printf("%-10s | %-9s | %-9s | %-9s | %-9s | %-9s | %-9s | %-9s\n", 
+           "Size", "STL(L)", "Bin(L)", "4ary(L)", "Fib", "Pair", "Fib(P)", "Pair(P)");
+    printf("--------------------------------------------------------------------------------------\n");
+    
+    std::vector<int> sizes = {1000, 10000, 50000, 100000, 200000}; // Reduced max for speed
     
     for (int N : sizes) {
         int ops = N; 
@@ -376,6 +417,22 @@ void benchmarkDecreaseKeyHeavy() {
             }
             return t.elapsed();
         });
+
+        // Binary Heap Lazy
+        double t_bin = runIsolated([&]() {
+            BinaryHeap<int> pq;
+            std::vector<int> current = initialData;
+            for(int x : current) pq.insert(x);
+            
+            Timer t;
+            for(auto p : opData) {
+                int idx = p.first;
+                int nv = std::max(1, current[idx] - p.second);
+                current[idx] = nv;
+                pq.insert(nv);
+            }
+            return t.elapsed();
+        });
         
         double t_4ary = runIsolated([&]() {
             FourAryHeap<int> pq;
@@ -386,9 +443,7 @@ void benchmarkDecreaseKeyHeavy() {
             for(auto p : opData) {
                 int idx = p.first;
                 int nv = std::max(1, current[idx] - p.second);
-                current[idx] = nv; // We must update this to keep logic consistent 
-                // BUT: 4-ary heap doesn't support decreaseKey by handle in this logical structure, 
-                // it's lazy insert.
+                current[idx] = nv; 
                 pq.insert(nv);
             }
             return t.elapsed();
@@ -454,20 +509,21 @@ void benchmarkDecreaseKeyHeavy() {
              return t.elapsed();
         });
         
-        printf("%-12d | %-12s | %-12s | %-12s | %-12s | %-12s | %-12s\n",
-           N, fmt(t_stl).c_str(), fmt(t_4ary).c_str(), fmt(t_fib).c_str(), fmt(t_pair).c_str(), 
+        printf("%-10d | %-9s | %-9s | %-9s | %-9s | %-9s | %-9s | %-9s\n",
+           N, fmt(t_stl).c_str(), fmt(t_bin).c_str(), fmt(t_4ary).c_str(), 
+           fmt(t_fib).c_str(), fmt(t_pair).c_str(), 
            fmt(t_pooled_fib).c_str(), fmt(t_pooled).c_str());
     }
 }
 
 void benchmarkMergeSequence() {
     std::cout << "\n=== Benchmark 3: Sequence of Merges (Pure Merge) ===" << std::endl;
-    std::cout << "(Data Size = Total Elements across all heaps)" << std::endl;
-    printf("%-12s | %-12s | %-12s | %-12s | %-12s\n", 
-           "Data Size", "STL (ms)", "4-ary (ms)", "Fib (ms)", "Pairing (ms)");
-    printf("----------------------------------------------------------------------------\n");
+    // Updated header
+    printf("%-10s | %-9s | %-9s | %-9s | %-9s | %-9s\n", 
+           "Size", "STL", "Binary", "4-ary", "Fib", "Pair");
+    printf("----------------------------------------------------------------------\n");
     
-    std::vector<int> totalElements = {10000, 100000, 500000, 1000000};
+    std::vector<int> totalElements = {10000, 100000, 500000};
     const int HEAP_SIZE = 100;
     
     for (int TotalN : totalElements) {
@@ -490,6 +546,22 @@ void benchmarkMergeSequence() {
                 while(!heaps[i].empty()) {
                     heaps[0].push(heaps[i].top());
                     heaps[i].pop();
+                }
+            }
+            return t.elapsed();
+        });
+
+        // Binary Heap Merge
+        double t_bin = runIsolated([&]() {
+            std::vector<BinaryHeap<int>> heaps(numHeaps);
+            for(int i=0; i<numHeaps; ++i) 
+                for(int x : heapData[i]) heaps[i].insert(x);
+            
+            Timer t;
+            for(int i=1; i<numHeaps; ++i) {
+                // Binary heaps don't have efficient merge, so we act like 4-ary
+                while(!heaps[i].isEmpty()) {
+                    heaps[0].insert(heaps[i].extractMin());
                 }
             }
             return t.elapsed();
@@ -529,38 +601,33 @@ void benchmarkMergeSequence() {
             return t.elapsed();
         });
         
-
-        
-       printf("%-12d | %-12s | %-12s | %-12s | %-12s\n",
-           TotalN, fmt(t_stl).c_str(), fmt(t_4ary).c_str(), fmt(t_fib).c_str(), fmt(t_pair).c_str());
+       printf("%-10d | %-9s | %-9s | %-9s | %-9s | %-9s\n",
+           TotalN, fmt(t_stl).c_str(), fmt(t_bin).c_str(), fmt(t_4ary).c_str(), fmt(t_fib).c_str(), fmt(t_pair).c_str());
     }
 }
 
 void benchmarkDijkstraLazy() {
     std::cout << "\n=== Benchmark 4a: Dijkstra (Lazy Variants) ===" << std::endl;
-    std::cout << "(Note: Allocator overhead is significant for Fib/Pair)" << std::endl;
-    
-    printf("%-9s | %-9s | %-10s | %-9s | %-12s | %-9s | %-9s | %-9s\n", 
-           "Vertices", "STL", "4-ary", "Fib(Lazy)", "Pair(Lazy)", "Fib(Pool)", "Pair(Pool)", "Ops(Ins/Ext)");
-    printf("-------------------------------------------------------------------------------\n");
+    // Updated header
+    printf("%-9s | %-9s | %-9s | %-9s | %-9s | %-9s | %-9s | %-9s\n", 
+           "Vertices", "STL", "Binary", "4-ary", "Fib(L)", "Pair(L)", "Fib(P)", "Pair(P)");
+    printf("------------------------------------------------------------------------------------------\n");
     
     std::vector<int> vertCounts = {1000, 5000, 10000, 20000, 50000};
     
     for (int V : vertCounts) {
         Graph g = generateRandomGraph(V, 20, 100);
         
-        // Collect stats once
+        // Collect stats once (using STL)
         OpStats stats;
         dijkstraSTL(g, 0, &stats);
         
         double t_stl = runBenchmark([&](){ dijkstraSTL(g, 0); });
+        double t_bin = runBenchmark([&](){ dijkstraBinaryHeap(g, 0); }); // Binary Heap
         double t_4ary = runBenchmark([&](){ dijkstraFourAryHeap(g, 0); });
         double t_fib = runBenchmark([&](){ dijkstraFibonacciHeapLazy(g, 0); });
         double t_pair = runBenchmark([&](){ dijkstraPairingHeapLazy(g, 0); });
 
- 
-        // Actually, the user asked for full coverage. 
-        // PooledFibonacciHeap and PooledPairingHeap are classes. We can use them in a "Lazy" way just by calling insert/extractMin.
         double t_pooled_fib_lazy = runBenchmark([&](){ 
              PooledFibonacciHeap<std::pair<int, int>> pq;
              std::vector<int> dist(g.size(), std::numeric_limits<int>::max());
@@ -595,23 +662,21 @@ void benchmarkDijkstraLazy() {
              }
         });
 
-        std::string opsStr = std::to_string(stats.inserts) + "/" + std::to_string(stats.extractMins);
-
-        printf("%-9d | %-9s | %-10s | %-9s | %-12s | %-9s | %-9s | %-9s\n",
+        printf("%-9d | %-9s | %-9s | %-9s | %-9s | %-9s | %-9s | %-9s\n",
                V, 
-               fmt(t_stl).c_str(), fmt(t_4ary).c_str(), 
+               fmt(t_stl).c_str(), fmt(t_bin).c_str(), fmt(t_4ary).c_str(), 
                fmt(t_fib).c_str(), fmt(t_pair).c_str(),
-               fmt(t_pooled_fib_lazy).c_str(), fmt(t_pooled_pair_lazy).c_str(),
-               opsStr.c_str());
+               fmt(t_pooled_fib_lazy).c_str(), fmt(t_pooled_pair_lazy).c_str());
     }
 }
 
 void benchmarkDijkstraDecKey() {
     std::cout << "\n=== Benchmark 4b: Dijkstra (Decrease-Key Variants) ===" << std::endl;
+    std::cout << "Binary and 4-ary heaps are omitted here as they don't support O(1) decrease-key." << std::endl;
     
     printf("%-9s | %-9s | %-9s | %-9s | %-9s | %-16s\n", 
-           "Vertices", "Fib(Dec)", "Pair(Dec)", "Fib(Pool)", "Pair(Pool)", "Ops(Ins/Dec/Ext)");
-    printf("---------------------------------------------------------\n");
+           "Vertices", "Fib(Dec)", "Pair(Dec)", "Fib(P)", "Pair(P)", "Ops(Ins/Dec/Ext)");
+    printf("--------------------------------------------------------------------------------\n");
     
     std::vector<int> vertCounts = {1000, 5000, 10000, 20000, 50000};
     
@@ -694,7 +759,7 @@ void benchmarkDijkstraDecKey() {
 
 
 int main() {
-    std::cout << "=== Priority Queue Benchmark Suite ===" << std::endl;
+    std::cout << "=== Priority Queue Benchmark Suite (Complete) ===" << std::endl;
     std::cout << "Runs per benchmark: 5 (+2 warmup)" << std::endl;
     
     benchmarkInsertHeavy();
