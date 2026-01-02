@@ -7,7 +7,7 @@
 // PairingNode constructor
 template<typename T>
 PairingNode<T>::PairingNode(const T& val) 
-    : value(val), leftChild(nullptr), nextSibling(nullptr), parent(nullptr) {}
+    : value(val), leftChild(nullptr), nextSibling(nullptr), prevSibling(nullptr), parent(nullptr) {}
 
 // PairingHeap private methods
 
@@ -23,6 +23,10 @@ PairingNode<T>* PairingHeap<T>::merge(PairingNode<T>* h1, PairingNode<T>* h2) {
     
     // Make h2 a child of h1
     h2->nextSibling = h1->leftChild;
+    h2->prevSibling = nullptr;
+    if (h1->leftChild != nullptr) {
+        h1->leftChild->prevSibling = h2;
+    }
     h1->leftChild = h2;
     h2->parent = h1;  // Set parent
     
@@ -43,33 +47,46 @@ PairingNode<T>* PairingHeap<T>::mergePairs(PairingNode<T>* firstSibling) {
         firstSibling->parent = nullptr;  // Clear parent during merge
         PairingNode<T>* next = firstSibling->nextSibling;
         firstSibling->nextSibling = nullptr;  // Disconnect
+        firstSibling->prevSibling = nullptr;  // Clear prev
         firstSibling = next;
     }
     
-    // First pass
-    std::vector<PairingNode<T>*> pass1;
-    for (size_t i = 0; i + 1 < siblings.size(); i += 2) {
-        pass1.push_back(merge(siblings[i], siblings[i + 1]));
-    }
-    if (siblings.size() % 2 == 1) {
-        pass1.push_back(siblings.back());
-    }
 
-    // Second pass
-    PairingNode<T>* result = pass1.back();
-    for (int i = (int)pass1.size() - 2; i >= 0; --i) {
-        result = merge(pass1[i], result);
+    // First pass: merge pairs from left to right
+    size_t i = 0;
+    while (i + 1 < siblings.size()) {
+        siblings[i] = merge(siblings[i], siblings[i + 1]);
+        i += 2;
     }
-    return result;
+    
+    // Start from the last merged pair (or last single node)
+    size_t start = (siblings.size() % 2 == 0) ? siblings.size() - 2 : siblings.size() - 1;
+    
+    // Second pass: merge from right to left
+    for (int j = start - 2; j >= 0; j -= 2) {
+        siblings[start] = merge(siblings[j], siblings[start]);
+    }
+    
+    return siblings[start];
+    
 }
 
 template<typename T>
 void PairingHeap<T>::deleteTree(PairingNode<T>* node) {
     if (node == nullptr) return;
     
-    deleteTree(node->leftChild);
-    deleteTree(node->nextSibling);
-    delete node;
+    std::vector<PairingNode<T>*> stack;
+    stack.push_back(node);
+    
+    while (!stack.empty()) {
+        PairingNode<T>* current = stack.back();
+        stack.pop_back();
+        
+        if (current->leftChild) stack.push_back(current->leftChild);
+        if (current->nextSibling) stack.push_back(current->nextSibling);
+        
+        delete current;
+    }
 }
 
 template<typename T>
@@ -79,7 +96,11 @@ PairingNode<T>* PairingHeap<T>::cloneTree(PairingNode<T>* node, PairingNode<T>* 
     PairingNode<T>* newNode = new PairingNode<T>(node->value);
     newNode->parent = par;
     newNode->leftChild = cloneTree(node->leftChild, newNode);
-    newNode->nextSibling = cloneTree(node->nextSibling, par);
+    PairingNode<T>* clonedSibling = cloneTree(node->nextSibling, par);
+    newNode->nextSibling = clonedSibling;
+    if (clonedSibling != nullptr) {
+        clonedSibling->prevSibling = newNode;
+    }
     
     return newNode;
 }
@@ -90,22 +111,25 @@ void PairingHeap<T>::cut(PairingNode<T>* node) {
     
     PairingNode<T>* par = node->parent;
     
-    // Remove from parent's child list
+    // Remove from parent's child list using doubly-linked siblings - O(1)
     if (par->leftChild == node) {
         par->leftChild = node->nextSibling;
-    } else {
-        // Find previous sibling
-        PairingNode<T>* prev = par->leftChild;
-        while (prev != nullptr && prev->nextSibling != node) {
-            prev = prev->nextSibling;
+        if (node->nextSibling != nullptr) {
+            node->nextSibling->prevSibling = nullptr;
         }
-        if (prev != nullptr) {
-            prev->nextSibling = node->nextSibling;
+    } else {
+        // Use prevSibling for O(1) removal
+        if (node->prevSibling != nullptr) {
+            node->prevSibling->nextSibling = node->nextSibling;
+        }
+        if (node->nextSibling != nullptr) {
+            node->nextSibling->prevSibling = node->prevSibling;
         }
     }
     
     node->parent = nullptr;
     node->nextSibling = nullptr;
+    node->prevSibling = nullptr;
 }
 
 // PairingHeap public methods

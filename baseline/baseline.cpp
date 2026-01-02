@@ -1,69 +1,12 @@
 #include <iostream>
-#include <queue>
-#include <vector>
-#include <functional>
-
-// Baseline Priority Queue using STL
-// NOTE: std::priority_queue does NOT support efficient decrease-key
-// This is a key limitation compared to pairing heaps
-
-template<typename T>
-class BaselinePriorityQueue {
-private:
-    std::priority_queue<T, std::vector<T>, std::greater<T>> pq;  // Min-heap
-    
-public:
-    // Insert an element
-    void insert(const T& value) {
-        pq.push(value);
-    }
-    
-    // Get minimum element
-    const T& findMin() const {
-        if (isEmpty()) {
-            throw std::runtime_error("Queue is empty");
-        }
-        return pq.top();
-    }
-    
-    // Remove minimum element
-    void deleteMin() {
-        if (isEmpty()) {
-            throw std::runtime_error("Queue is empty");
-        }
-        pq.pop();
-    }
-    
-    // Extract minimum element
-    T extractMin() {
-        T minValue = findMin();
-        deleteMin();
-        return minValue;
-    }
-    
-    // Check if empty
-    bool isEmpty() const {
-        return pq.empty();
-    }
-    
-    // Get size
-    size_t size() const {
-        return pq.size();
-    }
-    
-    // Clear the queue
-    void clear() {
-        while (!isEmpty()) {
-            deleteMin();
-        }
-    }
-};
-
+#include "baseline.h"
+#include "FourAryHeap.h"
+#include "FibonacciHeap.h"
 int main() {
-    std::cout << "=== Baseline STL Priority Queue Implementation ===" << std::endl << std::endl;
+    std::cout << "=== Baseline Heap Implementations ===" << std::endl << std::endl;
     
     // Test 1: Basic operations
-    std::cout << "Test 1: Basic Insert and Extract Operations" << std::endl;
+    std::cout << "Test 1: STL Priority Queue" << std::endl;
     BaselinePriorityQueue<int> pq;
     
     std::cout << "Inserting: 5, 3, 8, 1, 9, 2, 7" << std::endl;
@@ -84,28 +27,103 @@ int main() {
     }
     std::cout << std::endl << std::endl;
     
-    // Test 2: Large dataset
-    std::cout << "Test 2: Performance with Larger Dataset" << std::endl;
-    BaselinePriorityQueue<int> largePQ;
+    // Test 2: 4-ary Heap
+    std::cout << "========================================" << std::endl;
+    std::cout << "Test 2: 4-ary Heap" << std::endl;
+    std::cout << "========================================" << std::endl;
+    FourAryHeap<int> fourAry;
     
-    std::cout << "Inserting 1000 elements..." << std::endl;
-    for (int i = 1000; i > 0; i--) {
-        largePQ.insert(i);
-    }
+    std::cout << "Inserting: 5, 3, 8, 1, 9, 2, 7" << std::endl;
+    fourAry.insert(5);
+    fourAry.insert(3);
+    fourAry.insert(8);
+    fourAry.insert(1);
+    fourAry.insert(9);
+    fourAry.insert(2);
+    fourAry.insert(7);
     
-    std::cout << "Queue size: " << largePQ.size() << std::endl;
-    std::cout << "Minimum: " << largePQ.findMin() << std::endl;
+    std::cout << "Queue size: " << fourAry.size() << std::endl;
+    std::cout << "Minimum element: " << fourAry.findMin() << std::endl;
     
-    std::cout << "Extracting first 10 elements: ";
-    for (int i = 0; i < 10 && !largePQ.isEmpty(); i++) {
-        std::cout << largePQ.extractMin() << " ";
+    std::cout << "Extracting elements in sorted order: ";
+    while (!fourAry.isEmpty()) {
+        std::cout << fourAry.extractMin() << " ";
     }
     std::cout << std::endl;
-    std::cout << "Remaining elements: " << largePQ.size() << std::endl << std::endl;
     
-    std::cout << "NOTE: This baseline does NOT support decrease-key operation" << std::endl;
-    std::cout << "For Dijkstra's algorithm, the workaround is to insert duplicate" << std::endl;
-    std::cout << "entries with updated values, which is less efficient." << std::endl << std::endl;
+    std::cout << "NOTE: 4-ary heap offers better cache performance than binary heap" << std::endl;
+    std::cout << "but still does NOT support efficient decrease-key operation." << std::endl;
+    std::cout << std::endl << std::endl;
+    
+    // Test 3: Fibonacci Heap
+    std::cout << "========================================" << std::endl;
+    std::cout << "Test 3: Fibonacci Heap" << std::endl;
+    std::cout << "========================================" << std::endl;
+    FibonacciHeap<int> fibHeap;
+    
+    std::cout << "Inserting: 5, 3, 8, 1, 9, 2, 7" << std::endl;
+    auto node5 = fibHeap.insert(5);
+    auto node3 = fibHeap.insert(3);
+    fibHeap.insert(8);
+    fibHeap.insert(1);
+    fibHeap.insert(9);
+    fibHeap.insert(2);
+    fibHeap.insert(7);
+    
+    std::cout << "Queue size: " << fibHeap.size() << std::endl;
+    std::cout << "Minimum element: " << fibHeap.findMin() << std::endl;
+    
+    std::cout << "\nTesting decrease-key operation:" << std::endl;
+    std::cout << "Decrease key of node(5) to 0" << std::endl;
+    fibHeap.decreaseKey(node5, 0);
+    std::cout << "New minimum: " << fibHeap.findMin() << std::endl;
+    
+    std::cout << "Decrease key of node(3) to -1" << std::endl;
+    fibHeap.decreaseKey(node3, -1);
+    std::cout << "New minimum: " << fibHeap.findMin() << std::endl;
+    
+    std::cout << "\nExtracting elements in sorted order: ";
+    while (!fibHeap.isEmpty()) {
+        std::cout << fibHeap.extractMin() << " ";
+    }
+    std::cout << std::endl;
+    
+    std::cout << "NOTE: Fibonacci heap supports O(1) amortized decrease-key," << std::endl;
+    std::cout << "similar to Pairing Heap, making it suitable for Dijkstra's algorithm." << std::endl;
+    std::cout << std::endl << std::endl;
+    
+    std::cout << "========================================" << std::endl;
+    std::cout << "Summary Comparison" << std::endl;
+    std::cout << "========================================" << std::endl;
+    std::cout << "1. STL priority_queue (Binary Heap):" << std::endl;
+    std::cout << "   - Insert: O(log n)" << std::endl;
+    std::cout << "   - Extract-Min: O(log n)" << std::endl;
+    std::cout << "   - Decrease-Key: NOT SUPPORTED" << std::endl;
+    std::cout << "   - Merge: NOT SUPPORTED" << std::endl;
+    std::cout << std::endl;
+    
+    std::cout << "2. 4-ary Heap:" << std::endl;
+    std::cout << "   - Insert: O(log_4 n)" << std::endl;
+    std::cout << "   - Extract-Min: O(4 * log_4 n)" << std::endl;
+    std::cout << "   - Decrease-Key: NOT SUPPORTED" << std::endl;
+    std::cout << "   - Better cache performance than binary heap" << std::endl;
+    std::cout << std::endl;
+    
+    std::cout << "3. Fibonacci Heap:" << std::endl;
+    std::cout << "   - Insert: O(1) amortized" << std::endl;
+    std::cout << "   - Extract-Min: O(log n) amortized" << std::endl;
+    std::cout << "   - Decrease-Key: O(1) amortized ✓" << std::endl;
+    std::cout << "   - Merge: O(1) ✓" << std::endl;
+    std::cout << "   - More complex implementation, higher constant factors" << std::endl;
+    std::cout << std::endl;
+    
+    std::cout << "4. Pairing Heap (Your Implementation):" << std::endl;
+    std::cout << "   - Insert: O(1)" << std::endl;
+    std::cout << "   - Extract-Min: O(log n) amortized" << std::endl;
+    std::cout << "   - Decrease-Key: O(1) amortized ✓" << std::endl;
+    std::cout << "   - Merge: O(1) ✓" << std::endl;
+    std::cout << "   - Simpler than Fibonacci, often faster in practice" << std::endl;
+    std::cout << std::endl;
     
     std::cout << "=== Baseline Tests Completed ===" << std::endl;
     
