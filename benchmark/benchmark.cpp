@@ -8,8 +8,10 @@
 #include <string>
 
 #include "../datastructure/PairingHeap.h"
+#include "../datastructure/PooledPairingHeap.h"
 #include "../baseline/FourAryHeap.h"
 #include "../baseline/FibonacciHeap.h"
+#include "../baseline/PooledFibonacciHeap.h"
 #include "../baseline/baseline.h"
 
 // ==========================================
@@ -43,6 +45,17 @@ double runBenchmark(Func f, int iterations = 5, int warmup = 2) {
         Timer timer;
         f();
         totalTime += timer.elapsed();
+    }
+    return totalTime / iterations;
+}
+
+template<typename Func>
+double runIsolated(Func f, int iterations = 5, int warmup = 2) {
+    for(int i=0; i<warmup; ++i) f();
+    
+    double totalTime = 0.0;
+    for(int i=0; i<iterations; ++i) {
+        totalTime += f();
     }
     return totalTime / iterations;
 }
@@ -264,9 +277,9 @@ std::vector<int> dijkstraPairingHeap(const Graph& graph, int source, OpStats* st
 // ==========================================
 
 void benchmarkInsertHeavy() {
-    std::cout << "\n=== Benchmark 1: Insert-Heavy Workload ===" << std::endl;
-    printf("%-12s | %-12s | %-12s | %-12s | %-12s\n", 
-           "Data Size", "STL (ms)", "4-ary (ms)", "Fib (ms)", "Pairing (ms)");
+    std::cout << "\n=== Benchmark 1: Insert-Heavy Workload (Pure Insert) ===" << std::endl;
+    printf("%-12s | %-12s | %-12s | %-12s | %-12s | %-12s | %-12s\n", 
+           "Data Size", "STL (ms)", "4-ary (ms)", "Fib (ms)", "Pairing (ms)", "Fib (Pool)", "Pair (Pool)");
     printf("----------------------------------------------------------------------------\n");
     
     std::vector<int> sizes = {1000, 10000, 100000, 500000, 1000000};
@@ -277,37 +290,60 @@ void benchmarkInsertHeavy() {
         std::uniform_int_distribution<> dis(1, 1000000);
         for(int& x : data) x = dis(gen);
         
-        double t_stl = runBenchmark([&]() {
+        double t_stl = runIsolated([&]() {
             std::priority_queue<int, std::vector<int>, std::greater<>> pq;
+            Timer t;
             for(int x : data) pq.push(x);
+            return t.elapsed();
         });
         
-        double t_4ary = runBenchmark([&]() {
+        double t_4ary = runIsolated([&]() {
             FourAryHeap<int> pq;
+            Timer t;
             for(int x : data) pq.insert(x);
+            return t.elapsed();
         });
         
-        double t_fib = runBenchmark([&]() {
+        double t_fib = runIsolated([&]() {
             FibonacciHeap<int> pq;
+            Timer t;
             for(int x : data) pq.insert(x);
+            return t.elapsed();
         });
         
-        double t_pair = runBenchmark([&]() {
+        double t_pair = runIsolated([&]() {
             PairingHeap<int> pq;
+            Timer t;
             for(int x : data) pq.insert(x);
+            return t.elapsed();
         });
         
-        printf("%-12d | %-12s | %-12s | %-12s | %-12s\n",
-           N, fmt(t_stl).c_str(), fmt(t_4ary).c_str(), fmt(t_fib).c_str(), fmt(t_pair).c_str());
+        double t_pooled_fib = runIsolated([&]() {
+            PooledFibonacciHeap<int> pq;
+            Timer t;
+            for(int x : data) pq.insert(x);
+            return t.elapsed();
+        });
+
+        double t_pooled_pair = runIsolated([&]() {
+            PooledPairingHeap<int> pq;
+            Timer t;
+            for(int x : data) pq.insert(x);
+            return t.elapsed();
+        });
+        
+        printf("%-12d | %-12s | %-12s | %-12s | %-12s | %-12s | %-12s\n",
+           N, fmt(t_stl).c_str(), fmt(t_4ary).c_str(), fmt(t_fib).c_str(), fmt(t_pair).c_str(), 
+           fmt(t_pooled_fib).c_str(), fmt(t_pooled_pair).c_str());
     }
 }
 
 void benchmarkDecreaseKeyHeavy() {
-    std::cout << "\n=== Benchmark 2: Decrease-Key-Heavy Workload ===" << std::endl;
+    std::cout << "\n=== Benchmark 2: Decrease-Key-Heavy Workload (Pure Decrease-Key) ===" << std::endl;
     std::cout << "Highlighting Theoretical Capabilities (Allocators may impact Perf)" << std::endl;
     std::cout << "(Data Size = Initial Elements, Operations = Data Size)" << std::endl;
-    printf("%-12s | %-12s | %-12s | %-12s | %-12s\n", 
-           "Data Size", "STL (Lazy)", "4-ary (Lazy)", "Fib (Dec)", "Pair (Dec)");
+    printf("%-12s | %-12s | %-12s | %-12s | %-12s | %-12s | %-12s\n", 
+           "Data Size", "STL (Lazy)", "4-ary (Lazy)", "Fib (Dec)", "Pair (Dec)", "Fib (Pool)", "Pair (Pool)");
     printf("----------------------------------------------------------------------------\n");
     
     // Extended scales
@@ -326,61 +362,106 @@ void benchmarkDecreaseKeyHeavy() {
         std::uniform_int_distribution<> decDis(1, 10000);
         for(auto& p : opData) p = {idxDis(gen), decDis(gen)};
         
-        double t_stl = runBenchmark([&]() {
+        double t_stl = runIsolated([&]() {
             std::priority_queue<int, std::vector<int>, std::greater<>> pq;
             std::vector<int> current = initialData;
             for(int x : current) pq.push(x);
+            
+            Timer t;
             for(auto p : opData) {
                 int idx = p.first;
                 int nv = std::max(1, current[idx] - p.second);
                 current[idx] = nv;
                 pq.push(nv);
             }
+            return t.elapsed();
         });
         
-        double t_4ary = runBenchmark([&]() {
+        double t_4ary = runIsolated([&]() {
             FourAryHeap<int> pq;
             std::vector<int> current = initialData;
             for(int x : current) pq.insert(x);
+             
+            Timer t;
             for(auto p : opData) {
                 int idx = p.first;
                 int nv = std::max(1, current[idx] - p.second);
-                current[idx] = nv;
+                current[idx] = nv; // We must update this to keep logic consistent 
+                // BUT: 4-ary heap doesn't support decreaseKey by handle in this logical structure, 
+                // it's lazy insert.
                 pq.insert(nv);
             }
+            return t.elapsed();
         });
         
-        double t_fib = runBenchmark([&]() {
+        double t_fib = runIsolated([&]() {
              FibonacciHeap<int> pq;
              std::vector<FibNode<int>*> nodes;
              nodes.reserve(N);
              for(int x : initialData) nodes.push_back(pq.insert(x));
+             
+             Timer t;
              for(auto p : opData) {
                  int idx = p.first;
                  int nv = std::max(1, nodes[idx]->value - p.second);
                  pq.decreaseKey(nodes[idx], nv);
              }
+             return t.elapsed();
         });
         
-        double t_pair = runBenchmark([&]() {
+        double t_pair = runIsolated([&]() {
              PairingHeap<int> pq;
              std::vector<PairingNode<int>*> nodes;
              nodes.reserve(N);
              for(int x : initialData) nodes.push_back(pq.insert(x));
+             
+             Timer t;
              for(auto p : opData) {
                  int idx = p.first;
                  int nv = std::max(1, nodes[idx]->value - p.second);
                  pq.decreaseKey(nodes[idx], nv);
              }
+             return t.elapsed();
+        });
+
+        double t_pooled_fib = runIsolated([&]() {
+             PooledFibonacciHeap<int> pq;
+             std::vector<FibNode<int>*> nodes;
+             nodes.reserve(N);
+             for(int x : initialData) nodes.push_back(pq.insert(x));
+             
+             Timer t;
+             for(auto p : opData) {
+                 int idx = p.first;
+                 int nv = std::max(1, nodes[idx]->value - p.second);
+                 pq.decreaseKey(nodes[idx], nv);
+             }
+             return t.elapsed();
+        });
+
+        double t_pooled = runIsolated([&]() {
+             PooledPairingHeap<int> pq;
+             std::vector<PairingNode<int>*> nodes;
+             nodes.reserve(N);
+             for(int x : initialData) nodes.push_back(pq.insert(x));
+             
+             Timer t;
+             for(auto p : opData) {
+                 int idx = p.first;
+                 int nv = std::max(1, nodes[idx]->value - p.second);
+                 pq.decreaseKey(nodes[idx], nv);
+             }
+             return t.elapsed();
         });
         
-        printf("%-12d | %-12s | %-12s | %-12s | %-12s\n",
-           N, fmt(t_stl).c_str(), fmt(t_4ary).c_str(), fmt(t_fib).c_str(), fmt(t_pair).c_str());
+        printf("%-12d | %-12s | %-12s | %-12s | %-12s | %-12s | %-12s\n",
+           N, fmt(t_stl).c_str(), fmt(t_4ary).c_str(), fmt(t_fib).c_str(), fmt(t_pair).c_str(), 
+           fmt(t_pooled_fib).c_str(), fmt(t_pooled).c_str());
     }
 }
 
 void benchmarkMergeSequence() {
-    std::cout << "\n=== Benchmark 3: Sequence of Merges ===" << std::endl;
+    std::cout << "\n=== Benchmark 3: Sequence of Merges (Pure Merge) ===" << std::endl;
     std::cout << "(Data Size = Total Elements across all heaps)" << std::endl;
     printf("%-12s | %-12s | %-12s | %-12s | %-12s\n", 
            "Data Size", "STL (ms)", "4-ary (ms)", "Fib (ms)", "Pairing (ms)");
@@ -399,42 +480,56 @@ void benchmarkMergeSequence() {
             for(int j=0; j<HEAP_SIZE; ++j) heapData[i].push_back(dis(gen));
         }
         
-        double t_stl = runBenchmark([&]() {
+        double t_stl = runIsolated([&]() {
             std::vector<std::priority_queue<int, std::vector<int>, std::greater<>>> heaps(numHeaps);
             for(int i=0; i<numHeaps; ++i) 
                 for(int x : heapData[i]) heaps[i].push(x);
+            
+            Timer t;
             for(int i=1; i<numHeaps; ++i) {
                 while(!heaps[i].empty()) {
                     heaps[0].push(heaps[i].top());
                     heaps[i].pop();
                 }
             }
+            return t.elapsed();
         });
         
-        double t_4ary = runBenchmark([&]() {
+        double t_4ary = runIsolated([&]() {
             std::vector<FourAryHeap<int>> heaps(numHeaps);
             for(int i=0; i<numHeaps; ++i) 
                 for(int x : heapData[i]) heaps[i].insert(x);
+            
+            Timer t;
             for(int i=1; i<numHeaps; ++i) {
                 while(!heaps[i].isEmpty()) {
                     heaps[0].insert(heaps[i].extractMin());
                 }
             }
+            return t.elapsed();
         });
         
-        double t_fib = runBenchmark([&]() {
+        double t_fib = runIsolated([&]() {
             std::vector<FibonacciHeap<int>> heaps(numHeaps);
             for(int i=0; i<numHeaps; ++i) 
                 for(int x : heapData[i]) heaps[i].insert(x);
+            
+            Timer t;
             for(int i=1; i<numHeaps; ++i) heaps[0].merge(heaps[i]);
+            return t.elapsed();
         });
         
-        double t_pair = runBenchmark([&]() {
+        double t_pair = runIsolated([&]() {
             std::vector<PairingHeap<int>> heaps(numHeaps);
             for(int i=0; i<numHeaps; ++i) 
                 for(int x : heapData[i]) heaps[i].insert(x);
+             
+            Timer t;
             for(int i=1; i<numHeaps; ++i) heaps[0].merge(heaps[i]);
+            return t.elapsed();
         });
+        
+
         
        printf("%-12d | %-12s | %-12s | %-12s | %-12s\n",
            TotalN, fmt(t_stl).c_str(), fmt(t_4ary).c_str(), fmt(t_fib).c_str(), fmt(t_pair).c_str());
@@ -445,8 +540,8 @@ void benchmarkDijkstraLazy() {
     std::cout << "\n=== Benchmark 4a: Dijkstra (Lazy Variants) ===" << std::endl;
     std::cout << "(Note: Allocator overhead is significant for Fib/Pair)" << std::endl;
     
-    printf("%-9s | %-9s | %-10s | %-9s | %-12s | %-9s\n", 
-           "Vertices", "STL", "4-ary", "Fib(Lazy)", "Pair(Lazy)", "Ops(Ins/Ext)");
+    printf("%-9s | %-9s | %-10s | %-9s | %-12s | %-9s | %-9s | %-9s\n", 
+           "Vertices", "STL", "4-ary", "Fib(Lazy)", "Pair(Lazy)", "Fib(Pool)", "Pair(Pool)", "Ops(Ins/Ext)");
     printf("-------------------------------------------------------------------------------\n");
     
     std::vector<int> vertCounts = {1000, 5000, 10000, 20000, 50000};
@@ -463,12 +558,50 @@ void benchmarkDijkstraLazy() {
         double t_fib = runBenchmark([&](){ dijkstraFibonacciHeapLazy(g, 0); });
         double t_pair = runBenchmark([&](){ dijkstraPairingHeapLazy(g, 0); });
 
+ 
+        // Actually, the user asked for full coverage. 
+        // PooledFibonacciHeap and PooledPairingHeap are classes. We can use them in a "Lazy" way just by calling insert/extractMin.
+        double t_pooled_fib_lazy = runBenchmark([&](){ 
+             PooledFibonacciHeap<std::pair<int, int>> pq;
+             std::vector<int> dist(g.size(), std::numeric_limits<int>::max());
+             dist[0] = 0;
+             pq.insert({0, 0});
+             while(!pq.isEmpty()) {
+                 auto [d, u] = pq.extractMin();
+                 if(d > dist[u]) continue;
+                 for(const auto& edge : g[u]) {
+                     if(dist[u] + edge.weight < dist[edge.to]) {
+                         dist[edge.to] = dist[u] + edge.weight;
+                         pq.insert({dist[edge.to], edge.to});
+                     }
+                 }
+             }
+        });
+
+        double t_pooled_pair_lazy = runBenchmark([&](){ 
+             PooledPairingHeap<std::pair<int, int>> pq;
+             std::vector<int> dist(g.size(), std::numeric_limits<int>::max());
+             dist[0] = 0;
+             pq.insert({0, 0});
+             while(!pq.isEmpty()) {
+                 auto [d, u] = pq.extractMin();
+                 if(d > dist[u]) continue;
+                 for(const auto& edge : g[u]) {
+                     if(dist[u] + edge.weight < dist[edge.to]) {
+                         dist[edge.to] = dist[u] + edge.weight;
+                         pq.insert({dist[edge.to], edge.to});
+                     }
+                 }
+             }
+        });
+
         std::string opsStr = std::to_string(stats.inserts) + "/" + std::to_string(stats.extractMins);
 
-        printf("%-9d | %-9s | %-10s | %-9s | %-12s | %-9s\n",
+        printf("%-9d | %-9s | %-10s | %-9s | %-12s | %-9s | %-9s | %-9s\n",
                V, 
                fmt(t_stl).c_str(), fmt(t_4ary).c_str(), 
                fmt(t_fib).c_str(), fmt(t_pair).c_str(),
+               fmt(t_pooled_fib_lazy).c_str(), fmt(t_pooled_pair_lazy).c_str(),
                opsStr.c_str());
     }
 }
@@ -476,8 +609,8 @@ void benchmarkDijkstraLazy() {
 void benchmarkDijkstraDecKey() {
     std::cout << "\n=== Benchmark 4b: Dijkstra (Decrease-Key Variants) ===" << std::endl;
     
-    printf("%-9s | %-9s | %-9s | %-16s\n", 
-           "Vertices", "Fib(Dec)", "Pair(Dec)", "Ops(Ins/Dec/Ext)");
+    printf("%-9s | %-9s | %-9s | %-9s | %-9s | %-16s\n", 
+           "Vertices", "Fib(Dec)", "Pair(Dec)", "Fib(Pool)", "Pair(Pool)", "Ops(Ins/Dec/Ext)");
     printf("---------------------------------------------------------\n");
     
     std::vector<int> vertCounts = {1000, 5000, 10000, 20000, 50000};
@@ -491,16 +624,74 @@ void benchmarkDijkstraDecKey() {
         double t_fib_dec = runBenchmark([&](){ dijkstraFibonacciHeap(g, 0); });
         double t_pair_dec = runBenchmark([&](){ dijkstraPairingHeap(g, 0); });
         
+        double t_pooled_fib = runBenchmark([&](){ 
+             int n = g.size();
+             std::vector<int> dist(n, std::numeric_limits<int>::max());
+             std::vector<FibNode<std::pair<int, int>>*> nodeHandles(n, nullptr);
+             PooledFibonacciHeap<std::pair<int, int>> pq;
+             
+             dist[0] = 0;
+             nodeHandles[0] = pq.insert({0, 0});
+             
+             while (!pq.isEmpty()) {
+                 auto [d, u] = pq.extractMin();
+                 if (d > dist[u]) continue;
+                 for (const Edge& edge : g[u]) {
+                     int v = edge.to;
+                     int newDist = dist[u] + edge.weight;
+                     if (newDist < dist[v]) {
+                         if (dist[v] == std::numeric_limits<int>::max()) {
+                             dist[v] = newDist;
+                             nodeHandles[v] = pq.insert({newDist, v});
+                         } else {
+                             dist[v] = newDist;
+                             pq.decreaseKey(nodeHandles[v], {newDist, v});
+                         }
+                     }
+                 }
+             }
+        });
+
+        double t_pooled = runBenchmark([&](){ 
+             int n = g.size();
+             std::vector<int> dist(n, std::numeric_limits<int>::max());
+             std::vector<PairingNode<std::pair<int, int>>*> nodeHandles(n, nullptr);
+             PooledPairingHeap<std::pair<int, int>> pq;
+             
+             dist[0] = 0;
+             nodeHandles[0] = pq.insert({0, 0});
+             
+             while (!pq.isEmpty()) {
+                 auto [d, u] = pq.extractMin();
+                 if (d > dist[u]) continue;
+                 for (const Edge& edge : g[u]) {
+                     int v = edge.to;
+                     int newDist = dist[u] + edge.weight;
+                     if (newDist < dist[v]) {
+                         if (dist[v] == std::numeric_limits<int>::max()) {
+                             dist[v] = newDist;
+                             nodeHandles[v] = pq.insert({newDist, v});
+                         } else {
+                             dist[v] = newDist;
+                             pq.decreaseKey(nodeHandles[v], {newDist, v});
+                         }
+                     }
+                 }
+             }
+        });
+        
         std::string opsStr = std::to_string(stats.inserts) + "/" + 
                              std::to_string(stats.decreaseKeys) + "/" + 
                              std::to_string(stats.extractMins);
         
-        printf("%-9d | %-9s | %-9s | %-16s\n",
+        printf("%-9d | %-9s | %-9s | %-9s | %-9s | %-16s\n",
                V, 
-               fmt(t_fib_dec).c_str(), fmt(t_pair_dec).c_str(),
+               fmt(t_fib_dec).c_str(), fmt(t_pair_dec).c_str(), 
+               fmt(t_pooled_fib).c_str(), fmt(t_pooled).c_str(),
                opsStr.c_str());
     }
 }
+
 
 int main() {
     std::cout << "=== Priority Queue Benchmark Suite ===" << std::endl;
