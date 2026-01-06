@@ -56,12 +56,12 @@ int main() {
     heap4.insert(2);
     heap4.insert(4);
     heap4.insert(6);
-    
+
     std::cout << "Heap 3 size before merge: " << heap3.size() << std::endl;
     std::cout << "Heap 4 size before merge: " << heap4.size() << std::endl;
     
     heap3.merge(heap4);
-    
+
     std::cout << "Heap 3 size after merge: " << heap3.size() << std::endl;
     std::cout << "Heap 4 size after merge: " << heap4.size() << std::endl;
     std::cout << "Merged heap elements: ";

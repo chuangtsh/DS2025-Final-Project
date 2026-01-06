@@ -79,6 +79,33 @@ public:
 
     // Delete arbitrary node
     void deleteNode(PairingNode<T>* node);
+
+    void dumpDOTRecursive(PairingNode<T>* node) {
+        if (!node) return;
+        std::cout << "  node" << node << " [label=\"" << node->value << "\"];\n";
+        if (node->leftChild) {
+            std::cout << "  node" << node << " -> node" << node->leftChild 
+                    << " [label=\"child\"];\n";
+            dumpDOTRecursive(node->leftChild);
+        }
+        if (node->nextSibling) {
+            std::cout << "  node" << node << " -> node" << node->nextSibling 
+                    << " [label=\"sibling\", color=red, style=dashed, constraint=false];\n";
+            
+            std::cout << "  { rank=same; node" << node << "; node" << node->nextSibling << "; }\n";
+
+            dumpDOTRecursive(node->nextSibling);
+        }
+    }
+
+    void printVisualization() {
+        std::cout << "digraph PairingHeap {\n";
+        std::cout << "  node [shape=circle];\n";
+        if (root != nullptr) {
+            dumpDOTRecursive(root);
+        }
+        std::cout << "}\n";
+    }
 };
 
 // Include template implementation
