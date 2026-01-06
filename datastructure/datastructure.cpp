@@ -52,15 +52,21 @@ int main() {
     heap3.insert(1);
     heap3.insert(5);
     heap3.insert(9);
+
+    heap3.printVisualization("heap3(merge)");
     
     heap4.insert(2);
     heap4.insert(4);
     heap4.insert(6);
 
+    heap4.printVisualization("heap4(merge)");
+
     std::cout << "Heap 3 size before merge: " << heap3.size() << std::endl;
     std::cout << "Heap 4 size before merge: " << heap4.size() << std::endl;
     
     heap3.merge(heap4);
+
+    heap3.printVisualization("heap3+4(merged)");
 
     std::cout << "Heap 3 size after merge: " << heap3.size() << std::endl;
     std::cout << "Heap 4 size after merge: " << heap4.size() << std::endl;

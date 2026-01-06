@@ -3,6 +3,8 @@
 #include <vector>
 #include <stdexcept>
 #include <algorithm>
+#include <iomanip>
+#include <fstream>
 
 // PairingNode constructor
 template<typename T>
@@ -251,4 +253,52 @@ void PairingHeap<T>::deleteNode(PairingNode<T>* node) {
     }else{
         deleteMin();
     }
+}
+
+template<typename T>
+void PairingHeap<T>::dumpDOTRecursive(PairingNode<T>* node, std::ostream& out) {
+    if (!node) return;
+    out << "  node" << node << " [label=\"" << node->value << "\"];\n";
+
+    if (node->leftChild) {
+        out << "  node" << node << " -> node" << node->leftChild 
+            << " [label=\"child\"];\n";
+        dumpDOTRecursive(node->leftChild, out);
+    }
+
+    if (node->nextSibling) {
+        out << "  node" << node << " -> node" << node->nextSibling 
+            << " [label=\"sibling\", color=red, style=dashed, constraint=false];\n";
+        out << "  { rank=same; node" << node << "; node" << node->nextSibling << "; }\n";
+        dumpDOTRecursive(node->nextSibling, out);
+    }
+}
+
+template<typename T>
+void PairingHeap<T>::printVisualization(const std::string& title) {
+    static int fileCounter = 0;
+
+    std::stringstream ss;
+    ss << "graph_dots/heap_" << std::setw(2) << std::setfill('0') << fileCounter++ 
+        << "_" << title << ".dot";
+    std::string filename = ss.str();
+    
+    std::ofstream outFile(filename);
+    if (!outFile) {
+        std::cerr << "Error creating file: " << filename << std::endl;
+        return;
+    }
+
+    outFile << "digraph PairingHeap {\n";
+    outFile << "  label=\"" << title << "\";\n";
+    outFile << "  labelloc=\"t\";\n";
+    outFile << "  node [shape=circle];\n";
+    
+    if (root != nullptr) {
+        dumpDOTRecursive(root, outFile);
+    }
+    outFile << "}\n";
+    
+    outFile.close();
+    std::cout << "Generated visualization: " << filename << std::endl;
 }

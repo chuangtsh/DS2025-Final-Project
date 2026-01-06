@@ -1,0 +1,11 @@
+digraph PairingHeap {
+  label="heap4(merge)";
+  labelloc="t";
+  node [shape=circle];
+  node0x5af89017f6f0 [label="2"];
+  node0x5af89017f6f0 -> node0x5af89017f7b0 [label="child"];
+  node0x5af89017f7b0 [label="6"];
+  node0x5af89017f7b0 -> node0x5af89017f7e0 [label="sibling", color=red, style=dashed, constraint=false];
+  { rank=same; node0x5af89017f7b0; node0x5af89017f7e0; }
+  node0x5af89017f7e0 [label="4"];
+}
