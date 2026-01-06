@@ -15,4 +15,4 @@ baseline/baseline.exe: baseline/baseline.cpp baseline/baseline.h baseline/FourAr
 	$(CXX) $(CXXFLAGS) $< -o $@
 
 clean:
-	rm -f datastructure/*.exe benchmark/*.exe baseline/*.exe
+	rm -f datastructure/*.exe benchmark/*.exe baseline/*.exe graph_dots/*.dot
