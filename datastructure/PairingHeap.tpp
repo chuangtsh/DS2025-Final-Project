@@ -7,7 +7,7 @@
 // PairingNode constructor
 template<typename T>
 PairingNode<T>::PairingNode(const T& val) 
-    : value(val), leftChild(nullptr), nextSibling(nullptr), prevSibling(nullptr), parent(nullptr) {}
+    : value(val), leftChild(nullptr), nextSibling(nullptr), prev(nullptr) {}
 
 // PairingHeap private methods
 
@@ -16,21 +16,19 @@ PairingNode<T>* PairingHeap<T>::merge(PairingNode<T>* h1, PairingNode<T>* h2) {
     if (h1 == nullptr) return h2;
     if (h2 == nullptr) return h1;
     
-    // Min-heap property: smaller value becomes root
+    // set h1 to be the smaller root
     if (h2->value < h1->value) {
         std::swap(h1, h2);
     }
     
     // Make h2 a child of h1
     h2->nextSibling = h1->leftChild;
-    h2->prevSibling = nullptr;
     if (h1->leftChild != nullptr) {
-        h1->leftChild->prevSibling = h2;
+        h1->leftChild->prev = h2;
     }
     h1->leftChild = h2;
-    h2->parent = h1;  // Set parent
-    
-    
+    h2->prev = h1;  // Set parent
+
     return h1;
 }
 
@@ -86,12 +84,9 @@ PairingNode<T>* PairingHeap<T>::mergePairs(PairingNode<T>* firstSibling) {
     PairingNode<T>* rest = secondSibling->nextSibling;
     
     firstSibling->nextSibling = nullptr; 
-    firstSibling->prevSibling = nullptr;
+    firstSibling->prev = nullptr;
     secondSibling->nextSibling = nullptr;
-    secondSibling->prevSibling = nullptr;
-    
-    firstSibling->parent = nullptr;
-    secondSibling->parent = nullptr;
+    secondSibling->prev = nullptr;
 
     PairingNode<T>* mergedPair = merge(firstSibling, secondSibling);// 左至右產生兩兩一組的小heap
     PairingNode<T>* mergedRest = mergePairs(rest); // 右至左遞迴合併小heaps
@@ -117,47 +112,32 @@ void PairingHeap<T>::deleteTree(PairingNode<T>* node) {
     }
 }
 
-template<typename T>
-PairingNode<T>* PairingHeap<T>::cloneTree(PairingNode<T>* node, PairingNode<T>* par) {
-    if (node == nullptr) return nullptr;
+// template<typename T>
+// PairingNode<T>* PairingHeap<T>::cloneTree(PairingNode<T>* node, PairingNode<T>* par) {
+//     if (node == nullptr) return nullptr;
     
-    PairingNode<T>* newNode = new PairingNode<T>(node->value);
-    newNode->parent = par;
-    newNode->leftChild = cloneTree(node->leftChild, newNode);
-    PairingNode<T>* clonedSibling = cloneTree(node->nextSibling, par);
-    newNode->nextSibling = clonedSibling;
-    if (clonedSibling != nullptr) {
-        clonedSibling->prevSibling = newNode;
-    }
+//     PairingNode<T>* newNode = new PairingNode<T>(node->value);
+//     newNode->parent = par;
+//     newNode->leftChild = cloneTree(node->leftChild, newNode);
+//     PairingNode<T>* clonedSibling = cloneTree(node->nextSibling, par);
+//     newNode->nextSibling = clonedSibling;
+//     if (clonedSibling != nullptr) {
+//         clonedSibling->prevSibling = newNode;
+//     }
     
-    return newNode;
-}
+//     return newNode;
+// }
 
 template<typename T>
 void PairingHeap<T>::cut(PairingNode<T>* node) {
-    if (node == nullptr || node->parent == nullptr) return;  // Already root or invalid
-    
-    PairingNode<T>* par = node->parent;
-    
-    // Remove from parent's child list using doubly-linked siblings - O(1)
-    if (par->leftChild == node) {
-        par->leftChild = node->nextSibling;
-        if (node->nextSibling != nullptr) {
-            node->nextSibling->prevSibling = nullptr;
-        }
-    } else {
-        // Use prevSibling for O(1) removal
-        if (node->prevSibling != nullptr) {
-            node->prevSibling->nextSibling = node->nextSibling;
-        }
-        if (node->nextSibling != nullptr) {
-            node->nextSibling->prevSibling = node->prevSibling;
-        }
-    }
-    
-    node->parent = nullptr;
-    node->nextSibling = nullptr;
-    node->prevSibling = nullptr;
+    if (node == nullptr || node == root) return;  // Already root or invalid
+
+    if (node->prev->leftChild == node) node->prev->leftChild = node->nextSibling;
+    else node->prev->nextSibling = node->nextSibling;
+
+    if (node->nextSibling) node->nextSibling->prev = node->prev;
+
+    node->nextSibling = node->prev = nullptr;
 }
 
 // PairingHeap public methods

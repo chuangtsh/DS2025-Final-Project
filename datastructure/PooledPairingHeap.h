@@ -28,13 +28,12 @@ private:
         }
         
         h2->nextSibling = h1->leftChild;
-        h2->prevSibling = nullptr;
         if (h1->leftChild != nullptr) {
-            h1->leftChild->prevSibling = h2;
+            h1->leftChild->prev = h2;
         }
         h1->leftChild = h2;
-        h2->parent = h1;
-        
+        h2->prev = h1;
+
         return h1;
     }
     
@@ -81,12 +80,9 @@ private:
         PairingNode<T>* rest = secondSibling->nextSibling;
         
         firstSibling->nextSibling = nullptr; 
-        firstSibling->prevSibling = nullptr;
+        firstSibling->prev = nullptr;
         secondSibling->nextSibling = nullptr;
-        secondSibling->prevSibling = nullptr;
-        
-        firstSibling->parent = nullptr;
-        secondSibling->parent = nullptr;
+        secondSibling->prev = nullptr;
 
         PairingNode<T>* mergedPair = merge(firstSibling, secondSibling); // 左至右產生兩兩一組的小heap
         PairingNode<T>* mergedRest = mergePairs(rest); // 右至左遞迴合併小heaps
@@ -113,27 +109,14 @@ private:
     }
     
     void cut(PairingNode<T>* node) {
-        if (node == nullptr || node->parent == nullptr) return;
-        
-        PairingNode<T>* par = node->parent;
-        
-        if (par->leftChild == node) {
-            par->leftChild = node->nextSibling;
-            if (node->nextSibling != nullptr) {
-                node->nextSibling->prevSibling = nullptr;
-            }
-        } else {
-            if (node->prevSibling != nullptr) {
-                node->prevSibling->nextSibling = node->nextSibling;
-            }
-            if (node->nextSibling != nullptr) {
-                node->nextSibling->prevSibling = node->prevSibling;
-            }
-        }
-        
-        node->parent = nullptr;
-        node->nextSibling = nullptr;
-        node->prevSibling = nullptr;
+        if (node == nullptr || node == root) return;
+
+        if (node->prev->leftChild == node) node->prev->leftChild = node->nextSibling;
+        else node->prev->nextSibling = node->nextSibling;
+
+        if (node->nextSibling) node->nextSibling->prev = node->prev;
+
+        node->nextSibling = node->prev = nullptr;
     }
     
 public:
