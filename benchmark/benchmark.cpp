@@ -38,7 +38,7 @@ public:
 };
 
 template<typename Func>
-double runBenchmark(Func f, int iterations = 5, int warmup = 2) {
+double runBenchmark(Func f, int iterations = 20, int warmup = 5) {
     for(int i=0; i<warmup; ++i) f();
     
     double totalTime = 0.0;
@@ -51,7 +51,7 @@ double runBenchmark(Func f, int iterations = 5, int warmup = 2) {
 }
 
 template<typename Func>
-double runIsolated(Func f, int iterations = 5, int warmup = 2) {
+double runIsolated(Func f, int iterations = 20, int warmup = 5) {
     for(int i=0; i<warmup; ++i) f();
     
     double totalTime = 0.0;
@@ -760,7 +760,7 @@ void benchmarkDijkstraDecKey() {
 
 int main() {
     std::cout << "=== Priority Queue Benchmark Suite (Complete) ===" << std::endl;
-    std::cout << "Runs per benchmark: 5 (+2 warmup)" << std::endl;
+    std::cout << "Runs per benchmark: 20 (+5 warmup)" << std::endl;
     
     benchmarkInsertHeavy();
     benchmarkDecreaseKeyHeavy();
