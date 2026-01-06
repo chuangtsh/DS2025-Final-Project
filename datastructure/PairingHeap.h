@@ -11,8 +11,8 @@ struct PairingNode {
     T value;
     PairingNode* leftChild;
     PairingNode* nextSibling;
-    PairingNode* prevSibling;  // For O(1) cut operation
-    PairingNode* parent;  // For decrease-key support
+    PairingNode* prevSibling; // For O(1) cut operation in decrease-key
+    PairingNode* parent;
     
     explicit PairingNode(const T& val);
 };
