@@ -135,8 +135,8 @@ int main() {
 
     std::cout << "Initial heap minimum: " << heap8.findMin() << std::endl;
     
-    std::cout << "Decreasing 6 to 2..." << std::endl;
-    heap8.decreaseKey(node6, 2);
+    std::cout << "Decreasing 6 to 4..." << std::endl;
+    heap8.decreaseKey(node6, 4);
 
     heap8.printVisualization("After Decrease Key");
 
@@ -144,6 +144,39 @@ int main() {
     std::cout << "Elements after decrease-key: ";
     while (!heap8.isEmpty()) {
         std::cout << heap8.extractMin() << " ";
+    }
+    std::cout << std::endl << std::endl;
+
+    // Test 6: Delete arbitrary node
+    std::cout << "Test 6: Delete Arbitrary Node" << std::endl;
+
+    PairingHeap<int> heap9;
+
+    heap9.insert(7);
+    auto node2 = heap9.insert(2);
+    heap9.insert(5);
+    heap9.insert(6);
+    heap9.insert(1);
+    heap9.insert(3);
+    heap9.insert(4);
+
+    heap9.printVisualization("Before Delete 2");
+
+    std::cout << "Heap size: " << heap9.size() << std::endl;
+    std::cout << "Minimum: " << heap9.findMin() << std::endl;
+
+    heap9.deleteNode(node2);
+
+    heap9.printVisualization("After Delete 2");
+
+    std::cout << "After deleting 2:" << std::endl;
+    std::cout << "Heap size: " << heap9.size() << std::endl;
+    std::cout << "Minimum: " << heap9.findMin() << std::endl;
+
+
+    std::cout << "Remaining heap elements: ";
+    for (int i = 0; i < 10 && !heap9.isEmpty(); i++) {
+        std::cout << heap9.extractMin() << " ";
     }
     std::cout << std::endl << std::endl;
     
