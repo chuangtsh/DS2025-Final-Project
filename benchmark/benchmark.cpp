@@ -308,7 +308,7 @@ std::vector<int> dijkstraPairingHeap(const Graph& graph, int source, OpStats* st
 // ==========================================
 
 void benchmarkInsertHeavy() {
-    std::cout << "\n=== Benchmark 1: Insert-Heavy Workload (Pure Insert) ===" << std::endl;
+    std::cout << "\n=== Benchmark 2: Insert-Heavy Workload (Pure Insert) ===" << std::endl;
     // Updated header to include Binary
     printf("%-10s | %-9s | %-9s | %-9s | %-9s | %-9s | %-9s | %-9s\n", 
            "Size", "STL", "Binary", "4-ary", "Fib", "Pair", "Fib(P)", "Pair(P)");
@@ -517,7 +517,7 @@ void benchmarkDecreaseKeyHeavy() {
 }
 
 void benchmarkMergeSequence() {
-    std::cout << "\n=== Benchmark 2: Sequence of Merges (Pure Merge) ===" << std::endl;
+    std::cout << "\n=== Benchmark 1: Sequence of Merges (Pure Merge) ===" << std::endl;
     // Updated header
     printf("%-10s | %-9s | %-9s | %-9s | %-9s | %-9s\n", 
            "Size", "STL", "Binary", "4-ary", "Fib", "Pair");
@@ -762,8 +762,8 @@ int main() {
     std::cout << "=== Priority Queue Benchmark Suite (Complete) ===" << std::endl;
     std::cout << "Runs per benchmark: 20 (+5 warmup)" << std::endl;
     
-    benchmarkInsertHeavy();
     benchmarkMergeSequence();
+    benchmarkInsertHeavy();
     benchmarkDecreaseKeyHeavy();
     
     // Split Dijkstra benchmarks
