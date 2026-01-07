@@ -9,8 +9,8 @@
 template<typename T>
 struct PairingNode {
     T value;
-    PairingNode* leftChild;
-    PairingNode* nextSibling;
+    PairingNode* leftChild; // left child
+    PairingNode* nextSibling; // right sibling
     PairingNode* prev; // For O(1) cut operation in decrease-key
     
     explicit PairingNode(const T& val);
@@ -31,9 +31,6 @@ private:
     
     // Helper function to recursively delete all nodes
     void deleteTree(PairingNode<T>* node);
-    
-    // Helper function to clone a tree
-    PairingNode<T>* cloneTree(PairingNode<T>* node, PairingNode<T>* par = nullptr);
     
     // Cut a node from its parent (for decrease-key)
     void cut(PairingNode<T>* node);
@@ -79,6 +76,7 @@ public:
     // Delete arbitrary node
     void deleteNode(PairingNode<T>* node);
 
+    // Visualization helpers
     void dumpDOTRecursive(PairingNode<T>* node, std::ostream& out);
 
     void printVisualization(const std::string& title);

@@ -34,43 +34,6 @@ PairingNode<T>* PairingHeap<T>::merge(PairingNode<T>* h1, PairingNode<T>* h2) {
     return h1;
 }
 
-// template<typename T>
-// PairingNode<T>* PairingHeap<T>::mergePairs(PairingNode<T>* firstSibling) {
-//     if (firstSibling == nullptr || firstSibling->nextSibling == nullptr) {
-//         return firstSibling;
-//     }
-    
-//     // Store siblings in a vector for two-pass merge
-//     std::vector<PairingNode<T>*> siblings;
-//     while (firstSibling != nullptr) {
-//         siblings.push_back(firstSibling);
-//         firstSibling->parent = nullptr;  // Clear parent during merge
-//         PairingNode<T>* next = firstSibling->nextSibling;
-//         firstSibling->nextSibling = nullptr;  // Disconnect
-//         firstSibling->prevSibling = nullptr;  // Clear prev
-//         firstSibling = next;
-//     }
-    
-
-//     // First pass: merge pairs from left to right
-//     size_t i = 0;
-//     while (i + 1 < siblings.size()) {
-//         siblings[i] = merge(siblings[i], siblings[i + 1]);
-//         i += 2;
-//     }
-    
-//     // Start from the last merged pair (or last single node)
-//     size_t start = (siblings.size() % 2 == 0) ? siblings.size() - 2 : siblings.size() - 1;
-    
-//     // Second pass: merge from right to left
-//     for (int j = start - 2; j >= 0; j -= 2) {
-//         siblings[start] = merge(siblings[j], siblings[start]);
-//     }
-    
-//     return siblings[start];
-    
-// }
-
 template<typename T>
 PairingNode<T>* PairingHeap<T>::mergePairs(PairingNode<T>* firstSibling) {
     if (firstSibling == nullptr) {
@@ -90,9 +53,13 @@ PairingNode<T>* PairingHeap<T>::mergePairs(PairingNode<T>* firstSibling) {
     secondSibling->nextSibling = nullptr;
     secondSibling->prev = nullptr;
 
-    PairingNode<T>* mergedPair = merge(firstSibling, secondSibling);// 左至右產生兩兩一組的小heap
-    PairingNode<T>* mergedRest = mergePairs(rest); // 右至左遞迴合併小heaps
+    // merge two siblings to form a small pair heap
+    PairingNode<T>* mergedPair = merge(firstSibling, secondSibling);
 
+    // recursively merge the rest siblings (left to right)
+    PairingNode<T>* mergedRest = mergePairs(rest);
+
+    // merge the small pair heap with the merged rest (right to left)
     return merge(mergedPair, mergedRest);
 }
 
@@ -113,22 +80,6 @@ void PairingHeap<T>::deleteTree(PairingNode<T>* node) {
         delete current;
     }
 }
-
-// template<typename T>
-// PairingNode<T>* PairingHeap<T>::cloneTree(PairingNode<T>* node, PairingNode<T>* par) {
-//     if (node == nullptr) return nullptr;
-    
-//     PairingNode<T>* newNode = new PairingNode<T>(node->value);
-//     newNode->parent = par;
-//     newNode->leftChild = cloneTree(node->leftChild, newNode);
-//     PairingNode<T>* clonedSibling = cloneTree(node->nextSibling, par);
-//     newNode->nextSibling = clonedSibling;
-//     if (clonedSibling != nullptr) {
-//         clonedSibling->prevSibling = newNode;
-//     }
-    
-//     return newNode;
-// }
 
 template<typename T>
 void PairingHeap<T>::cut(PairingNode<T>* node) {
@@ -300,5 +251,5 @@ void PairingHeap<T>::printVisualization(const std::string& title) {
     outFile << "}\n";
     
     outFile.close();
-    std::cout << "Generated visualization: " << filename << std::endl;
+    // std::cout << "Generated visualization: " << filename << std::endl << std::endl;
 }

@@ -36,36 +36,6 @@ private:
 
         return h1;
     }
-    
-    // PairingNode<T>* mergePairs(PairingNode<T>* firstSibling) {
-    //     if (firstSibling == nullptr || firstSibling->nextSibling == nullptr) {
-    //         return firstSibling;
-    //     }
-        
-    //     std::vector<PairingNode<T>*> siblings;
-    //     while (firstSibling != nullptr) {
-    //         siblings.push_back(firstSibling);
-    //         firstSibling->parent = nullptr;
-    //         PairingNode<T>* next = firstSibling->nextSibling;
-    //         firstSibling->nextSibling = nullptr;
-    //         firstSibling->prevSibling = nullptr;
-    //         firstSibling = next;
-    //     }
-        
-    //     size_t i = 0;
-    //     while (i + 1 < siblings.size()) {
-    //         siblings[i] = merge(siblings[i], siblings[i + 1]);
-    //         i += 2;
-    //     }
-        
-    //     size_t start = (siblings.size() % 2 == 0) ? siblings.size() - 2 : siblings.size() - 1;
-        
-    //     for (int j = start - 2; j >= 0; j -= 2) {
-    //         siblings[start] = merge(siblings[j], siblings[start]);
-    //     }
-        
-    //     return siblings[start];
-    // }
 
     PairingNode<T>* mergePairs(PairingNode<T>* firstSibling) {
         if (firstSibling == nullptr) {
