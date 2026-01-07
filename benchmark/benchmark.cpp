@@ -380,7 +380,7 @@ void benchmarkInsertHeavy() {
 }
 
 void benchmarkDecreaseKeyHeavy() {
-    std::cout << "\n=== Benchmark 2: Decrease-Key-Heavy Workload ===" << std::endl;
+    std::cout << "\n=== Benchmark 3: Decrease-Key-Heavy Workload ===" << std::endl;
     std::cout << "Note: STL, Binary, and 4-ary use 'Lazy Insertion' (add duplicate) instead of DecreaseKey." << std::endl;
     
     // Updated header
@@ -517,7 +517,7 @@ void benchmarkDecreaseKeyHeavy() {
 }
 
 void benchmarkMergeSequence() {
-    std::cout << "\n=== Benchmark 3: Sequence of Merges (Pure Merge) ===" << std::endl;
+    std::cout << "\n=== Benchmark 2: Sequence of Merges (Pure Merge) ===" << std::endl;
     // Updated header
     printf("%-10s | %-9s | %-9s | %-9s | %-9s | %-9s\n", 
            "Size", "STL", "Binary", "4-ary", "Fib", "Pair");
@@ -763,8 +763,8 @@ int main() {
     std::cout << "Runs per benchmark: 20 (+5 warmup)" << std::endl;
     
     benchmarkInsertHeavy();
-    benchmarkDecreaseKeyHeavy();
     benchmarkMergeSequence();
+    benchmarkDecreaseKeyHeavy();
     
     // Split Dijkstra benchmarks
     benchmarkDijkstraLazy();
